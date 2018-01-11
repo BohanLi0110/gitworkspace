@@ -146,54 +146,38 @@ class DataSet(object):
     return epoch_size
 
 def file2seqid(config):
-  print(1)
-
   xmaxlen = config.xmaxlen
   ymaxlen = config.ymaxlen
   train = [l.strip().split('\t') for l in open(config.train_file)]
   dev = [l.strip().split('\t') for l in open(config.dev_file)]
   test = [l.strip().split('\t') for l in open(config.test_file)]
   vocab = get_vocab(train,"../data/glove/vocab.txt")
-  print(2)
 
   X_train, Y_train, Z_train = load_data(train, vocab)
   X_dev, Y_dev, Z_dev = load_data(dev, vocab)
   X_test, Y_test, Z_test = load_data(test,vocab)
-  print(3)
 
   lemma_X_train,lemma_Y_train=lemma_data(train,'../data/lemma_train.txt')
-  print(3.1)
   lemma_X_dev,lemma_Y_dev=lemma_data(dev,"../data/lemma_dev.txt")
-  print(3.2)
   lemma_X_test,lemma_Y_test=lemma_data(test,"../data/lemma_test.txt")
-  print(3.3)
-  lemma_train = [l.strip().split('\t') for l in open('../data/lemma_train.txt')]
-  #lemma_vocab=get_vocab(lemma_train,"../data/glove/lemma_vocab.txt") 
-  print(4)
-
-  lemma_vocab = create_dic('../data/glove/lemma_vocab.txt')
-
-  #print(lemma_vocab['church'])
-  print('\n'+'The dictionary!!!!'+'\n')
-  print(lemma_vocab)
+  lemma_train = [l.strip().split('\t') for l in open('../data/glove/lemma_train.txt')]
+  lemma_vocab = get_vocab(lemma_train,'../data/glove/lemma_vocab.txt')
   
-  print('\n'+'The dictionary length!!!!'+'\n')
-  print(len(lemma_vocab))
-  
-  print('good')
-  print(lemma_X_test[0][0])
-
-  print('get triple list:')
   triple_list=read_file('../data/triple_train.txt')
-  #print(triple_list)
-  #print(triple_list[0][0])
-  print('get relation id')
-  train_triple_id=set_relation_id(lemma_X_train,lemma_Y_train,triple_list,lemma_vocab)
-  print('train done')
-  dev_triple_id=set_relation_id(lemma_X_dev,lemma_Y_dev,triple_list,lemma_vocab)
-  print('dev done')
-  test_triple_id=set_relation_id(lemma_X_test,lemma_Y_test,triple_list,lemma_vocab)
-  #print(whole_id_list)
+  #train_triple_id=set_relation_id(lemma_X_train,lemma_Y_train,triple_list,lemma_vocab)
+  #dev_triple_id=set_relation_id(lemma_X_dev,lemma_Y_dev,triple_list,lemma_vocab)
+  #test_triple_id=set_relation_id(lemma_X_test,lemma_Y_test,triple_list,lemma_vocab)
+  #print(test_triple_id)
+
+  print(lemma_vocab['picture'])
+  print(lemma_vocab['painting'])
+  print(lemma_vocab['alone'])#id wrong
+  print(triple_list[1770])
+  print('rel id now')
+  testp=[['picture','a','girl','do','newword']]
+  testh=[['indoors','painting','a','boy','perform','newword']] 
+  test_id=set_relation_id(testp,testh,triple_list,lemma_vocab)
+  print(test_id)
   sys.exit()
 
   #X_train_lengths = [len(x) for x in X_train]
@@ -295,4 +279,4 @@ def snli_producer(data,config,name=None):
 
  
 if __name__=="__main__":
- file2seqid(SmallConfig)
+ file2seqid(TestConfig)
