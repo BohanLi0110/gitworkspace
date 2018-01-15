@@ -6,8 +6,8 @@ from myutils import *
 #from keras.preprocessing.sequence import pad_sequences
 #from keras.utils.np_utils import to_categorical
 from collections import Counter
-from config import *
-
+from config import TestConfig
+from config import SmallConfig
 from six.moves import xrange
 import numpy as np
 _PAD="_PAD"
@@ -35,25 +35,39 @@ def load_data(train,vocab,labels={'neutral':0,'entailment':1,'contradiction':2})
         p=map_to_idx(tokenize(p),vocab)+ [EOS_ID]
         h=[GO_ID]+map_to_idx(tokenize(h),vocab)+ [EOS_ID]
         p=filter_length(p,32)
-        h=filter_length(h,30)
+        h=filter_length(h,32)
         if l in labels:         # get rid of '-'
             X+=[p]
             Y+=[h]
             Z+=[labels[l]]     
     return X,Y,Z
-
+'''
 def lemma_data(data,path):
-  """
-  lemma_X:the list of all lemma p sentence 
-  lemma_Y:the list of all lemma h sentence 
-  """
-  lemma_X,lemma_Y=[],[]
+  #lemma_X:the list of all lemma p sentence 
+  #lemma_Y:the list of all lemma h sentence 
+  #lemma_X,lemma_Y=[],[]
+  
+  i=0
   for p,h,l in data:
     lemma_p=core_nlp_lemma(p)
     lemma_h=core_nlp_lemma(h)
     lemma_X+=[lemma_p]
     lemma_Y+=[lemma_h]
-  write_data_lemma(lemma_X,lemma_Y,path)
+    i+=1
+    if i%10000==0:
+      print(i)
+    write_data_lemma(lemma_p,lemma_h,path)
+  return lemma_X,lemma_Y
+'''
+def read_lemma_data(path):
+  lemma_X,lemma_Y=[],[]
+  with open(path) as f:
+    for line in f:
+      l = line.split('\t')
+      lemma_p=l[0].split(' ')
+      lemma_h=l[1].split(' ')
+      lemma_X+=[lemma_p]
+      lemma_Y+=[lemma_h]
   return lemma_X,lemma_Y
 
 def get_vocab(data,path):
@@ -82,7 +96,7 @@ def get_vocab(data,path):
 
 
 class DataSet(object):
-  def __init__(self,x,y,labels,x_len,y_len,X_mask,Y_mask):
+  def __init__(self,x,y,labels,x_len,y_len,X_mask,Y_mask,triple):
     self._data_len=len(x)
     self._x =x
     self._y =y
@@ -94,10 +108,11 @@ class DataSet(object):
     self._num_examples = x.shape[0]
     self._x_mask=X_mask
     self._y_mask=Y_mask
+    self.triple=triple
 
   def next_batch(self, batch_size):
     """Return the next `batch_size` examples from this data set."""
-
+    
     start = self._index_in_epoch
     self._index_in_epoch += batch_size
     if self._index_in_epoch > self._num_examples:
@@ -114,8 +129,8 @@ class DataSet(object):
     batch_x, batch_x_mask, batch_x_len = self._x[start:end], self._x_mask[start:end], self._x_len[start:end]
     batch_y,batch_y_mask, batch_y_len = self._y[start:end], self._y_mask[start:end], self._y_len[start:end]
     batch_labels = self._labels[start:end]
-    
-    return batch_x,batch_y, batch_labels,batch_x_mask,batch_y_mask,batch_x_len,batch_y_len
+    batch_triple=self.triple[start:end]
+    return batch_x,batch_y, batch_labels,batch_x_mask,batch_y_mask,batch_x_len,batch_y_len,batch_triple
 
   @property
   def get_x(self):
@@ -144,8 +159,18 @@ class DataSet(object):
   def get_epoch_size(self,batch_size):
     epoch_size = self._data_len //batch_size
     return epoch_size
+def read_vocab(path):
+  word_id_dic = {}
+  with open(path) as f:
+    for line in f:
+      l = line.split('\t')
+      word = l[0]
+      w_id = l[1]
+      word_id_dic[word] = int(w_id)
+  return word_id_dic
 
 def file2seqid(config):
+  
   xmaxlen = config.xmaxlen
   ymaxlen = config.ymaxlen
   train = [l.strip().split('\t') for l in open(config.train_file)]
@@ -157,29 +182,22 @@ def file2seqid(config):
   X_dev, Y_dev, Z_dev = load_data(dev, vocab)
   X_test, Y_test, Z_test = load_data(test,vocab)
 
-  lemma_X_train,lemma_Y_train=lemma_data(train,'../data/lemma_train.txt')
-  lemma_X_dev,lemma_Y_dev=lemma_data(dev,"../data/lemma_dev.txt")
-  lemma_X_test,lemma_Y_test=lemma_data(test,"../data/lemma_test.txt")
-  lemma_train = [l.strip().split('\t') for l in open('../data/glove/lemma_train.txt')]
-  lemma_vocab = get_vocab(lemma_train,'../data/glove/lemma_vocab.txt')
-  
-  triple_list=read_file('../data/triple_train.txt')
-  #train_triple_id=set_relation_id(lemma_X_train,lemma_Y_train,triple_list,lemma_vocab)
-  #dev_triple_id=set_relation_id(lemma_X_dev,lemma_Y_dev,triple_list,lemma_vocab)
-  #test_triple_id=set_relation_id(lemma_X_test,lemma_Y_test,triple_list,lemma_vocab)
+  lemma_X_train,lemma_Y_train=read_lemma_data(config.lemma_train_file)
+  lemma_X_dev,lemma_Y_dev=read_lemma_data(config.lemma_dev_file)
+  lemma_X_test,lemma_Y_test=read_lemma_data(config.lemma_test_file)
+
+  lemma_train=[l.strip().split('\t') for l in open("../data/snli_1.0/lemma_Train/lemma_train.txt")]
+  #lemma_vocab=get_vocab(lemma_train,"../data/glove/lemma_vocab.txt") 
+  lemma_vocab=read_vocab("../data/glove/lemma_vocab.txt")
+
+  triple_dic=read_triple('../data/triple_train.txt')
+  rel2id_dic=relation2id('../data/relation2id.txt')
+  train_triple_id=set_relation_id(lemma_X_train,lemma_Y_train,triple_dic,lemma_vocab,rel2id_dic)
+  dev_triple_id=set_relation_id(lemma_X_dev,lemma_Y_dev,triple_dic,lemma_vocab,rel2id_dic)
+  test_triple_id=set_relation_id(lemma_X_test,lemma_Y_test,triple_dic,lemma_vocab,rel2id_dic)
+ 
   #print(test_triple_id)
-
-  print(lemma_vocab['picture'])
-  print(lemma_vocab['painting'])
-  print(lemma_vocab['alone'])#id wrong
-  print(triple_list[1770])
-  print('rel id now')
-  testp=[['picture','a','girl','do','newword']]
-  testh=[['indoors','painting','a','boy','perform','newword']] 
-  test_id=set_relation_id(testp,testh,triple_list,lemma_vocab)
-  print(test_id)
-  sys.exit()
-
+ 
   #X_train_lengths = [len(x) for x in X_train]
   X_train_lengths=np.asarray([len(x) for x in X_train]).reshape(len(X_train))
   X_dev_lengths = np.asarray([len(x) for x in X_dev]).reshape(len(X_dev))
@@ -202,9 +220,15 @@ def file2seqid(config):
   X_train = pad_sequences(X_train, maxlen=xmaxlen, value=vocab[_PAD], padding='post') ## NO NEED TO GO TO NUMPY , CAN GIVE LIST OF PADDED LIST
   X_dev = pad_sequences(X_dev, maxlen=xmaxlen, value=vocab[_PAD], padding='post')
   X_test = pad_sequences(X_test, maxlen=xmaxlen, value=vocab[_PAD], padding='post')
+
   Y_train = pad_sequences(Y_train, maxlen=ymaxlen, value=vocab[_PAD], padding='post')
   Y_dev = pad_sequences(Y_dev, maxlen=ymaxlen, value=vocab[_PAD], padding='post')
   Y_test = pad_sequences(Y_test, maxlen=ymaxlen, value=vocab[_PAD], padding='post')
+  triple_len=np.multiply(xmaxlen,ymaxlen)
+  train_triple=pad_sequences(train_triple_id, maxlen=triple_len, value=lemma_vocab[_PAD], padding='post')
+  dev_triple=pad_sequences(dev_triple_id, maxlen=triple_len, value=lemma_vocab[_PAD], padding='post')
+  test_triple=pad_sequences(test_triple_id, maxlen=triple_len, value=lemma_vocab[_PAD], padding='post')
+  
 
   X_train_mask=pad_sequences(X_train_mask, maxlen=xmaxlen, value=vocab[_PAD], padding='post')
   X_dev_mask = pad_sequences(X_dev_mask , maxlen=xmaxlen, value=vocab[_PAD], padding='post')
@@ -215,9 +239,10 @@ def file2seqid(config):
   #print (len(X_train[1]),"padding X_train[1]", X_train[1])
   #print (len(Y_train[1]),"padding Y_train[1]", Y_train[1])
   #print (len(Z_train[1]),"padding Z_train[1]", Z_train[1])
-  Train = DataSet(X_train,Y_train,Z_train,X_train_lengths,Y_train_lengths,X_train_mask,Y_train_mask)
-  Dev = DataSet(X_dev,Y_dev,Z_dev,X_dev_lengths,Y_dev_lengths,X_dev_mask,Y_dev_mask)
-  Test = DataSet(X_test,Y_test,Z_test,X_test_lengths,Y_test_lengths,X_test_mask,Y_test_mask) 
+  Train = DataSet(X_train,Y_train,Z_train,X_train_lengths,Y_train_lengths,X_train_mask,Y_train_mask,train_triple)
+  Dev = DataSet(X_dev,Y_dev,Z_dev,X_dev_lengths,Y_dev_lengths,X_dev_mask,Y_dev_mask,dev_triple)
+  Test = DataSet(X_test,Y_test,Z_test,X_test_lengths,Y_test_lengths,X_test_mask,Y_test_mask,test_triple)
+  #batch_x,batch_y, batch_labels,batch_x_mask,batch_y_mask,batch_x_len,batch_y_len,batch_triple=Test.next_batch(config.batch_size) 
   #data_sets.train = DataSet(X_train,Y_train,Z_train,X_train_lengths,Y_train_lengths)
   #data_sets.dev = DataSet(X_dev,Y_dev,Z_dev,X_dev_lengths,Y_dev_lengths)
   #data_sets.test = DataSet(X_test,Y_test,Z_test,X_test_lengths,Y_test_lengths) 
@@ -228,6 +253,7 @@ def file2seqid(config):
   #print ("X_train_lengths[1]",X_train_lengths[1])
   #print ("X_dev_lengths[1]",X_dev_lengths[1])
   #print ("X_test_lengths[1]",X_test_lengths[1])
+  print("all done")
   return Train,Dev,Test,vocab
   
   
@@ -279,4 +305,4 @@ def snli_producer(data,config,name=None):
 
  
 if __name__=="__main__":
- file2seqid(TestConfig)
+ file2seqid(SmallConfig)

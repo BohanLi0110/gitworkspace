@@ -13,7 +13,7 @@ class SmallConfig(object):
   max_grad_norm = 5
   num_layers = 1
   xmaxlen=32
-  ymaxlen=30
+  ymaxlen=32
   num_classes=3
   hidden_units = 300
   embedding_size =300
@@ -33,6 +33,7 @@ class SmallConfig(object):
   early_stopping=10
   best_accuracy = 0
   best_val_epoch = 0
+  relation_size=50
  
   change_epoch = 5
   update_learning = 5
@@ -41,6 +42,10 @@ class SmallConfig(object):
   #train_file='../data/snli_1.0/train_10W.txt'
   dev_file='../data/snli_1.0/dev.txt'
   test_file='../data/snli_1.0/test.txt'
+  
+  lemma_train_file='../data/snli_1.0/lemma_Train/lemma_train.txt'
+  lemma_dev_file='../data/snli_1.0/lemma_Train/lemma_dev.txt'
+  lemma_test_file='../data/snli_1.0/lemma_Train/lemma_test.txt'
   
 class TestConfig(object):
   """Tiny config, for testing."""
@@ -54,7 +59,7 @@ class TestConfig(object):
   max_grad_norm = 5
   num_layers = 1
   xmaxlen=32
-  ymaxlen=30
+  ymaxlen=32
   num_classes=3
   hidden_units = 150
   embedding_size=300
@@ -69,6 +74,7 @@ class TestConfig(object):
 
   change_epoch = 5
   update_learning = 5
+  relation_size=50
 
   early_stopping=10
   best_accuracy = 0
@@ -77,3 +83,6 @@ class TestConfig(object):
   dev_file='../data/snli_1.0/dev_10.txt'
   test_file='../data/snli_1.0/test_10.txt'
 
+  lemma_train_file='../data/snli_1.0/lemma_Test/lemma_train_100.txt'
+  lemma_dev_file='../data/snli_1.0/lemma_Test/lemma_dev_10.txt'
+  lemma_test_file='../data/snli_1.0/lemma_Test/lemma_test_10.txt'

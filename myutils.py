@@ -196,59 +196,54 @@ def get_lemma_word(lemma_data):
       word_list.append(current_word)
   return word_list 
 
-def write_data_lemma(data_p,data_h,path):
+def write_data_lemma(p,h,path):
   '''data is a 1D list or a set'''
-  with open(path,"w") as f:
-    for i in range(len(data_p)):
-      p=data_p[i]
-      h=data_h[i]
-      for i in range(len(p)-1):
-        f.write(p[i]+" ")
-      f.write(p[len(p)-1]+"\t")
-      for j in range(len(h)-1):
-        f.write(h[j]+" ")
-      f.write(h[len(h)-1]+"\n")
-
+  with open(path,"a+") as f:
+    for i in range(len(p)-1):
+      f.write(p[i]+" ")
+    f.write(p[len(p)-1]+"\t")
+    for j in range(len(h)-1):
+      f.write(h[j]+" ")
+    f.write(h[len(h)-1]+"\n")
+    
 def create_dic(path):
-  with open(path) as data:
-    word_id_dic={}
-    for line in data:
-      word_id_list=line.strip().split("\t")
-      word=word_id_list[0]
-      w_id=word_id_list[1]
+  word_id_dic={}
+  with open(path) as f:
+    for line in f:
+      l=line.split("\t")
+      word=l[0]
+      w_id=l[1]
       word_id_dic[word]=w_id
   return word_id_dic
 
-
-def read_file(path):
-  '''
-  What we obtain using this function, i.e an example:
-  [
-  [930,92,Synonym],
-  [144,266,Synonym]
-  ]
-
-  '''
+def relation2id(path):
+  rel2id_dic={}
   with open(path) as f:
-    file_list = []
     for line in f:
-      line_list = re.split('\t', line.strip())
-      if line_list not in triple_list:
-        file_list.append(line_list)
-  return file_list
-##     
-def lable(p_id,h_id,triple_list):
-  for line in triple_list:
-    if int(line[0]) == int(p_id) and int(line[1]) == int(h_id):#int only
-      
-      if line[2] == 'Synonym':
-        return 0
-      elif line[2] == 'Antonym':
-        return 1
-      break
+      line_list = line.strip().split("\t")
+      rel2id_dic[line_list[0]]=line_list[1]
+  return rel2id_dic
+
+def read_triple(path):
+  triple_dic={}
+  with open(path) as f:
+    #file_list = []
+    for line in f:
+      line_list = line.strip().split("\t")
+      tup=(int(line_list[0]),int(line_list[1]))#(id1,id2)
+      triple_dic[tup]=line_list[2]
+  return triple_dic
+
+def label(p_id,h_id,triple_dic,rel2id_dic):
+  tup=(p_id,h_id)
+  if tup in triple_dic:
+    relation=triple_dic[tup]
   else:
-    #print(line+'\t'+'no'+str(i))
-    return 3
+    return rel2id_dic['NoRel']
+  if relation=="Synonym":
+    return rel2id_dic['Synonym']
+  if relation=="Antonym":
+    return rel2id_dic['Antonym']
 
 def get_id(word,lemma_vocab):
   if word in lemma_vocab.keys():
@@ -257,13 +252,14 @@ def get_id(word,lemma_vocab):
     return 1
 
 '''
-Synonym 0
-Antonym 1
-Same 2
-NoRel 3
+Padding	0
+Synonym	1
+Antonym	2
+Same	3
+NoRel	4
 '''
 
-def set_relation_id(p_list,h_list,triple_list,lemma_vocab):
+def set_relation_id(p_list,h_list,triple_dic,lemma_vocab,rel2id_dic):
   whole_id_list=[]
   for i in range(len(p_list)):
     p=p_list[i]
@@ -273,12 +269,18 @@ def set_relation_id(p_list,h_list,triple_list,lemma_vocab):
       p_id = get_id(p_word,lemma_vocab)
       for h_word in h:
         h_id = get_id(h_word,lemma_vocab)
-        if p_id == h_id:
-          line_id_list.append(2)
+        if p_id ==1 or h_id ==1:
+          line_id_list.append(rel2id_dic['NoRel'])
+        elif p_id == h_id:
+          line_id_list.append(rel2id_dic['Same'])
+        elif p_id==0 or h_id==0:
+          line_id_list.append(rel2id_dic['Padding'])
         else:
-          line_id_list.append(lable(p_id,h_id,triple_list))
+          line_id_list.append(label(p_id,h_id,triple_dic,rel2id_dic))
+          continue
     whole_id_list.append(line_id_list)
   return whole_id_list
+  
 
 if __name__=="__main__":
     pass
