@@ -238,12 +238,23 @@ def label(p_id,h_id,triple_dic,rel2id_dic):
   tup=(p_id,h_id)
   if tup in triple_dic:
     relation=triple_dic[tup]
+    #print(str(p_id)+'\t'+str(h_id)+'\t'+str(relation))
+    return rel2id_dic[str(relation)]
   else:
-    return rel2id_dic['NoRel']
+    #return rel2id_dic['NoRel']
+    return 2333
+  '''
   if relation=="Synonym":
     return rel2id_dic['Synonym']
   if relation=="Antonym":
     return rel2id_dic['Antonym']
+  '''
+  '''
+  for rel in rel2id_dic:
+    if rel==relation:
+      #print(str(rel)+' '+str(relation))
+      return rel2id_dic[rel]
+  '''
 
 def get_id(word,lemma_vocab):
   if word in lemma_vocab.keys():
@@ -274,7 +285,7 @@ def set_relation_id(p_list,h_list,triple_dic,lemma_vocab,rel2id_dic):
         elif p_id == h_id:
           line_id_list.append(rel2id_dic['Same'])
         elif p_id==0 or h_id==0:
-          line_id_list.append(rel2id_dic['Padding'])
+          line_id_list.append(rel2id_dic['_PAD'])
         else:
           line_id_list.append(label(p_id,h_id,triple_dic,rel2id_dic))
           continue

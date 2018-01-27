@@ -195,9 +195,18 @@ def file2seqid(config):
   train_triple_id=set_relation_id(lemma_X_train,lemma_Y_train,triple_dic,lemma_vocab,rel2id_dic)
   dev_triple_id=set_relation_id(lemma_X_dev,lemma_Y_dev,triple_dic,lemma_vocab,rel2id_dic)
   test_triple_id=set_relation_id(lemma_X_test,lemma_Y_test,triple_dic,lemma_vocab,rel2id_dic)
- 
+  '''
   #print(test_triple_id)
- 
+  #print(lemma_X_test)
+  test1=[['book','wing']]
+  test2=[['classroom','fly']]
+  print(get_id('book',lemma_vocab))
+  print(get_id('classroom',lemma_vocab))
+  print(get_id('wing',lemma_vocab))
+  print(get_id('fly',lemma_vocab))
+  test=set_relation_id(test1,test2,triple_dic,lemma_vocab,rel2id_dic)
+  print(test)
+  '''
   #X_train_lengths = [len(x) for x in X_train]
   X_train_lengths=np.asarray([len(x) for x in X_train]).reshape(len(X_train))
   X_dev_lengths = np.asarray([len(x) for x in X_dev]).reshape(len(X_dev))
